@@ -4,6 +4,9 @@
 # Ignore object files
 *.o
 
+# Ignore git folder
+git/
+
 # Ignore editor temporary files
 *.swp
 *.out
