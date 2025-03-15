@@ -1,0 +1,9 @@
+# Ignore executables
+/poker
+
+# Ignore object files
+*.o
+
+# Ignore editor temporary files
+*.swp
+*.out
