@@ -1,6 +1,8 @@
 #ifndef _PLAYER_
 #define _PLAYER_
 
-// placeholder, player actions such as betting, folding etc
+#include "game_logic.h"
+
+void playerTurn(Player *player);
 
 #endif

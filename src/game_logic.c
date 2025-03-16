@@ -54,6 +54,7 @@ int getPlayerNumber(){
             exit(-1);
         }
     }
+    
     return players;
 
 }
