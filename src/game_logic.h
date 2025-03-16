@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <errno.h>
+#include <unistd.h> // for sleep()
 #define DECK_SIZE 52
 
 extern const char SUITS[];
@@ -19,7 +20,7 @@ typedef struct {
 } Card;
 
 typedef struct {
-    char name[10];  // Player's name
+    char name[25];  // Player's name
     Card hand[2];   // Player's cards
     int chips;      // Number of chips the player has (default is 1k)
     int is_active;  // 1 if the player is still in the round, 0 if folded
@@ -33,13 +34,7 @@ void shuffleDeck(Card *deck);
 
 void initDeck(Card *deck);
 
-void getPlayerNames(Player *players, int players_number) {
-    for (int i = 0; i < players_number; i++) {
-        printf("Enter name for Player %d: ", i + 1);
-        scanf("%s", players[i].name);
-    }
-}
-
+void getPlayerNames(Player *players, int players_number);
 
 
 #endif

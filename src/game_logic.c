@@ -28,16 +28,28 @@ void startMessage(){
     printf("========================================\n");
     printf("            Welcome to Poker !          \n");
     printf("========================================\n");
+    sleep(1); 
     printf("\n");
-    printf("Brief Rules:\n");
+    printf("Rules:\n");
+    sleep(1);  
     printf("1. Each player is dealt 2 private cards.\n");
     printf("2. There are 5 community cards placed face-up on the table.\n");
+    sleep(1);  
     printf("3. Players take turns to bet, call, raise, or fold.\n");
     printf("4. The goal is to make the best 5-card hand using your 2 cards and the 5 community cards.\n");
     printf("5. The player with the best hand wins the pot!\n");
+    sleep(1);  
     printf("\n");
     printf("Let's get started!\n");
+    sleep(1);  
     printf("\n");
+}
+
+void getPlayerNames(Player *players, int players_number) {
+    for (int i = 0; i < players_number; i++) {
+        printf("Enter name for Player %d: ", i + 1);
+        scanf("%25s", players[i].name);
+    }
 }
 
 int getPlayerNumber(){
@@ -54,7 +66,7 @@ int getPlayerNumber(){
             exit(-1);
         }
     }
-    
+
     return players;
 
 }

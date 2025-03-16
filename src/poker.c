@@ -2,8 +2,8 @@
 #include "player.h"
 #include "game_logic.h"
 
-void game_loop(){
-    char input[10];
+void gameLoop(){
+    //char input[10];
 
 }
 
