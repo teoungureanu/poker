@@ -2,8 +2,15 @@
 #include "player.h"
 #include "game_logic.h"
 
-void gameLoop(){
-    //char input[10];
+void gameLoop(Player *players, int players_number, Card *deck){
+    dealCards(players, players_number, deck);
+    /*
+    Card community_cards[5]; //community cards, initially empty
+    int community_cards_count = 0;
+    int pot = 0;
+    int round = 0;
+    */
+
 
 }
 

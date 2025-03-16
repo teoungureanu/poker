@@ -17,7 +17,7 @@ void initDeck(Card *deck){
 void shuffleDeck(Card *deck){
     srand(time(NULL));
     for (int i = DECK_SIZE - 1; i > 0; i--) {
-        int j = rand() % (i + 1);  // Random index between 0 and i
+        int j = rand() % (i + 1);  // random index between 0 and i
         Card temp = deck[i];
         deck[i] = deck[j];
         deck[j] = temp;
@@ -68,5 +68,33 @@ int getPlayerNumber(){
     }
 
     return players;
+}
 
+void dealCards(Player *players, int players_number, Card *deck) {
+    int deck_index = 0; //keeps track of the number of the dealt card
+    for(int i = 0; i < players_number; i++){
+        for(int j = 0; j < 2; j++){
+            players[i].hand[j] = deck[deck_index];
+            deck_index++;
+        }
+        
+    }
+}
+
+void postBlinds(Player *players, int number_of_players, int *pot, int dealer_index) {
+    int small_blind = SMALL_BLIND;
+    int big_blind = BIG_BLIND;
+
+    // small blind: player to the left of the dealer
+    int small_blind_index = (dealer_index + 1) % number_of_players; 
+    //in case dealer index is 3, player "to the left" is gonna be index 0
+    players[small_blind_index].chips -= small_blind;
+    *pot += small_blind;
+    printf("%s posts the small blind (%d chips).\n", players[small_blind_index].name, small_blind);
+
+    // big blind: player to the left of the small blind
+    int big_blind_index = (small_blind_index + 1) % number_of_players;
+    players[big_blind_index].chips -= big_blind;
+    *pot += big_blind;
+    printf("%s posts the big blind (%d chips).\n", players[big_blind_index].name, big_blind);
 }
