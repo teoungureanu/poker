@@ -1,6 +1,7 @@
 # Poker Game
 
 A terminal-based poker game written in C.
+(Project in development)
 
 ## How to Build and Run
 1. Clone the repository:
