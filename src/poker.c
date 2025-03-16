@@ -4,6 +4,7 @@
 
 
 int main(void){
-    printf("Urmeaza proiectu");
+    startMessage();
+    getPlayerNumber();
     return 0;
 }
