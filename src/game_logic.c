@@ -13,7 +13,7 @@ void initDeck(Card *deck){
         }
     }
 }
-
+//fisher-yates shuffle algorithm
 void shuffleDeck(Card *deck){
     srand(time(NULL));
     for (int i = DECK_SIZE - 1; i > 0; i--) {
