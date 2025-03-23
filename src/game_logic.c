@@ -1,4 +1,6 @@
 #include "game_logic.h"
+#include <wchar.h>  // for wide characters
+#include <locale.h> // for setlocale (wide characters)
 
 const char SUITS[] = {'H', 'D', 'C', 'S'}; 
 const char RANKS[] = {'2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'};
@@ -81,12 +83,12 @@ void dealCards(Player *players, int players_number, Card *deck) {
     }
 }
 
-void postBlinds(Player *players, int number_of_players, int *pot, int dealer_index) {
+void postBlinds(Player *players, int number_of_players, int *pot, int *dealer_index) {
     int small_blind = SMALL_BLIND;
     int big_blind = BIG_BLIND;
 
     // small blind: player to the left of the dealer
-    int small_blind_index = (dealer_index + 1) % number_of_players; 
+    int small_blind_index = (*dealer_index + 1) % number_of_players; 
     //in case dealer index is 3, player "to the left" is gonna be index 0
     players[small_blind_index].chips -= small_blind;
     *pot += small_blind;
@@ -97,4 +99,66 @@ void postBlinds(Player *players, int number_of_players, int *pot, int dealer_ind
     players[big_blind_index].chips -= big_blind;
     *pot += big_blind;
     printf("%s posts the big blind (%d chips).\n", players[big_blind_index].name, big_blind);
+
+    *dealer_index = (*dealer_index + 1) % number_of_players;
+    //  dealer index changes to the next player
+    
+}
+
+void dealFlop(Card *deck, Card community_cards[5], int number_of_players){
+    community_cards[0] = deck[number_of_players * 2 + 1];
+    community_cards[1] = deck[number_of_players * 2 + 2];
+    community_cards[2] = deck[number_of_players * 2 + 3];
+    //deals the first 3 community cards
+}
+
+void dealTurn(Card *deck, Card community_cards[5], int number_of_players){
+    community_cards[3] = deck[number_of_players * 2 + 4];
+    //deals the 4th community card
+}
+
+void dealRiver(Card *deck, Card community_cards[5], int number_of_players){
+    community_cards[4] = deck[number_of_players * 2 + 5];
+    //deals the  5th community card
+}
+
+void showCommunityCards(Card community_cards[5], int community_cards_count) {
+    setlocale(LC_ALL, "");
+    printf("\n");
+    wprintf(L"Community Cards:\n");
+    if(community_cards_count == 0){
+        return;
+    }
+    for (int i = 0; i < community_cards_count; i++) {
+        wprintf(L"┌─────┐  ");
+    }
+    wprintf(L"\n");
+
+    for (int i = 0; i < community_cards_count; i++) {
+        wprintf(L"│%c    │  ", community_cards[i].rank);
+    }
+    wprintf(L"\n");
+
+    for (int i = 0; i < community_cards_count; i++) {
+        wchar_t suit_symbol;
+        switch (community_cards[i].suit) {
+            case 'H': suit_symbol = L'♥'; break;
+            case 'D': suit_symbol = L'♦'; break;
+            case 'C': suit_symbol = L'♣'; break;
+            case 'S': suit_symbol = L'♠'; break;
+            default:  suit_symbol = L'?'; break;
+        }
+        wprintf(L"│  %lc  │  ", suit_symbol);  // %lc for wide characters
+    }
+    wprintf(L"\n");
+
+    for (int i = 0; i < community_cards_count; i++) {
+        wprintf(L"│    %c│  ", community_cards[i].rank);
+    }
+    wprintf(L"\n");
+
+    for (int i = 0; i < community_cards_count; i++) {
+        wprintf(L"└─────┘  ");
+    }
+    wprintf(L"\n");
 }

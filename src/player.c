@@ -6,8 +6,8 @@
 void playerTurn(Player *player) {
     // set locale for wide characters
     setlocale(LC_ALL, "");
-
-    wprintf(L"\n%s's turn!\n", player->name);
+    printf("\n");
+    wprintf(L"%s's turn!\n", player->name);
     wprintf(L"Your hand:\n");
 
     for (int i = 0; i < 2; i++) {

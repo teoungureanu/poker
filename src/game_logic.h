@@ -41,6 +41,14 @@ void getPlayerNames(Player *players, int players_number);
 
 void dealCards(Player *players, int players_number, Card *deck);
 
-void postBlinds(Player *players, int number_of_players, int *pot, int dealer_index); 
+void postBlinds(Player *players, int number_of_players, int *pot, int *dealer_index); 
+
+void dealFlop(Card *deck, Card community_cards[5], int number_of_players);
+
+void dealTurn(Card *deck, Card community_cards[5], int number_of_players);
+
+void dealRiver(Card *deck, Card community_cards[5], int number_of_players);
+
+void showCommunityCards(Card community_cards[5], int community_card_counter);
 
 #endif
