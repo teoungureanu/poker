@@ -3,6 +3,6 @@
 
 #include "game_logic.h"
 
-void playerTurn(Player *player);
+void playerTurn(Player *player, int *pot, const char *lastAction);
 
 #endif

@@ -3,7 +3,7 @@
 #include <wchar.h>  // for wide characters
 #include <locale.h> // for setlocale (wide characters)
 
-void playerTurn(Player *player) {
+void playerTurn(Player *player, int *pot, const char *lastAction) {
     // set locale for wide characters
     setlocale(LC_ALL, "");
     printf("\n");
@@ -43,6 +43,19 @@ void playerTurn(Player *player) {
     }
     wprintf(L"\n");
 
-    // Add needed actions (bet, fold, check, etc.)
-    printf("Enter your action (bet, fold, check): ");
+    if (lastAction == NULL || strcmp(lastAction, "check") == 0) {
+        printf("Enter your action (bet, fold, check): ");
+    } else if (strcmp(lastAction, "bet") == 0 || strcmp(lastAction, "raise") == 0) {
+        printf("Enter your action (call, raise, fold): ");
+    } else {
+        printf("Enter your action (call, fold): ");
+    }   
+
+    char action[10]; 
+      // Get player input
+      scanf("%9s", action);
+      for (int i = 0; action[i]; i++) {
+          action[i] = tolower(action[i]); // Make input case-insensitive
+      }
+
 }
