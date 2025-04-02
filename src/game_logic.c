@@ -162,3 +162,13 @@ void showCommunityCards(Card community_cards[5], int community_cards_count) {
     }
     wprintf(L"\n");
 }
+
+int countActivePlayers(Player *players, int players_number) {
+    int active_count = 0;
+    for (int i = 0; i < players_number; i++) {
+        if (players[i].is_active) {
+            active_count++;
+        }
+    }
+    return active_count;
+}

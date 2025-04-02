@@ -27,6 +27,7 @@ typedef struct {
     Card hand[2];   // player's cards
     int chips;      // number of chips the player has
     int is_active;  // 1 if the player is still in the round, 0 if folded
+    int current_bet; //value of the player's bet
 } Player;
 
 void startMessage();
@@ -50,5 +51,7 @@ void dealTurn(Card *deck, Card community_cards[5], int number_of_players);
 void dealRiver(Card *deck, Card community_cards[5], int number_of_players);
 
 void showCommunityCards(Card community_cards[5], int community_card_counter);
+
+int countActivePlayers(Player *players, int players_number);
 
 #endif
