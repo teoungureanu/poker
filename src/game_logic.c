@@ -1,6 +1,4 @@
 #include "game_logic.h"
-#include <wchar.h>  // for wide characters
-#include <locale.h> // for setlocale (wide characters)
 
 const char SUITS[] = {'H', 'D', 'C', 'S'}; 
 const char RANKS[] = {'2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'};
@@ -51,7 +49,9 @@ void getPlayerNames(Player *players, int players_number) {
     for (int i = 0; i < players_number; i++) {
         printf("Enter name for Player %d: ", i + 1);
         scanf("%25s", players[i].name);
+        players[i].chips = DEFAULT_CHIPS; //sets players' chips to default macro
     }
+    printf("\n");
 }
 
 int getPlayerNumber(){
@@ -91,14 +91,16 @@ void postBlinds(Player *players, int number_of_players, int *pot, int *dealer_in
     int small_blind_index = (*dealer_index + 1) % number_of_players; 
     //in case dealer index is 3, player "to the left" is gonna be index 0
     players[small_blind_index].chips -= small_blind;
+    players[small_blind_index].current_bet = small_blind;
     *pot += small_blind;
-    printf("%s posts the small blind (%d chips).\n", players[small_blind_index].name, small_blind);
+    printf("%s posts the small blind (%d chips).\n\n", players[small_blind_index].name, small_blind);
 
     // big blind: player to the left of the small blind
     int big_blind_index = (small_blind_index + 1) % number_of_players;
     players[big_blind_index].chips -= big_blind;
+    players[big_blind_index].current_bet = big_blind;
     *pot += big_blind;
-    printf("%s posts the big blind (%d chips).\n", players[big_blind_index].name, big_blind);
+    printf("%s posts the big blind (%d chips).\n\n", players[big_blind_index].name, big_blind);
 
     *dealer_index = (*dealer_index + 1) % number_of_players;
     //  dealer index changes to the next player
@@ -123,44 +125,51 @@ void dealRiver(Card *deck, Card community_cards[5], int number_of_players){
 }
 
 void showCommunityCards(Card community_cards[5], int community_cards_count) {
-    setlocale(LC_ALL, "");
-    printf("\n");
-    wprintf(L"Community Cards:\n");
-    if(community_cards_count == 0){
+    printf("\nCommunity Cards:\n");
+    if (community_cards_count == 0) {
         return;
     }
-    for (int i = 0; i < community_cards_count; i++) {
-        wprintf(L"┌─────┐  ");
-    }
-    wprintf(L"\n");
 
     for (int i = 0; i < community_cards_count; i++) {
-        wprintf(L"│%c    │  ", community_cards[i].rank);
+        printf(".-----  ");
     }
-    wprintf(L"\n");
+    printf("\n");
 
     for (int i = 0; i < community_cards_count; i++) {
-        wchar_t suit_symbol;
-        switch (community_cards[i].suit) {
-            case 'H': suit_symbol = L'♥'; break;
-            case 'D': suit_symbol = L'♦'; break;
-            case 'C': suit_symbol = L'♣'; break;
-            case 'S': suit_symbol = L'♠'; break;
-            default:  suit_symbol = L'?'; break;
+        if (community_cards[i].rank == 'T') {
+            printf("|10   | ");
+        } else {
+            printf("|%-2c   | ", community_cards[i].rank);
         }
-        wprintf(L"│  %lc  │  ", suit_symbol);  // %lc for wide characters
     }
-    wprintf(L"\n");
+    printf("\n");
 
     for (int i = 0; i < community_cards_count; i++) {
-        wprintf(L"│    %c│  ", community_cards[i].rank);
+        char suit_symbol;
+        switch (community_cards[i].suit) {
+            case 'H': suit_symbol = 'H'; break;
+            case 'D': suit_symbol = 'D'; break;
+            case 'C': suit_symbol = 'C'; break;
+            case 'S': suit_symbol = 'S'; break;
+            default:  suit_symbol = '?'; break;
+        }
+        printf("|  %c  | ", suit_symbol);
     }
-    wprintf(L"\n");
+    printf("\n");
 
     for (int i = 0; i < community_cards_count; i++) {
-        wprintf(L"└─────┘  ");
+        if (community_cards[i].rank == 'T') {
+            printf("|   10| ");
+        } else {
+            printf("|   %-2c| ", community_cards[i].rank);
+        }
     }
-    wprintf(L"\n");
+    printf("\n");
+
+    for (int i = 0; i < community_cards_count; i++) {
+        printf("'-----  ");
+    }
+    printf("\n");
 }
 
 int countActivePlayers(Player *players, int players_number) {

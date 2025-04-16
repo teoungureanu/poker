@@ -1,8 +1,6 @@
 #include "player.h"
 #include <stdio.h>
 #include <string.h>
-#include <wchar.h>  // for wide characters
-#include <locale.h> // for setlocale (wide characters)
 
 void resetBettingRound(BettingState *state, int big_blind) {
     state->current_bet = big_blind;
@@ -21,77 +19,61 @@ int isBettingComplete(BettingState *state, Player *players, int player_count, in
 }
 
 void displayPlayerHand(Player *player) {
-    setlocale(LC_ALL, ""); 
-    wprintf(L"\n%s's hand:\n", player->name);
+    printf("\n%s's hand:\n", player->name);
+
+    for (int i = 0; i < 2; i++) printf(".-----.  ");
+    printf("\n");
+
     for (int i = 0; i < 2; i++) {
-        wprintf(L"┌─────┐  ");
+        if (player->hand[i].rank == 'T')
+            printf("|10   |  ");
+        else
+            printf("|%-5c|  ", player->hand[i].rank);
     }
-    wprintf(L"\n");
+    printf("\n");
+
     for (int i = 0; i < 2; i++) {
-        // separate case for 10 since it has 2 characters
-        if (player->hand[i].rank == 'T') {
-            wprintf(L"│10   │  ");
-        } else {
-            wprintf(L"│%c    │  ", player->hand[i].rank);
-        }
-    }
-    wprintf(L"\n");
-    
-    for (int i = 0; i < 2; i++) {
-        wchar_t suit_symbol;
+        char suit_symbol;
         switch (player->hand[i].suit) {
-            case 'H': suit_symbol = L'♥'; break;
-            case 'D': suit_symbol = L'♦'; break;
-            case 'C': suit_symbol = L'♣'; break;
-            case 'S': suit_symbol = L'♠'; break;
-            default:  suit_symbol = L'?'; break;
+            case 'H': suit_symbol = 'H'; break;
+            case 'D': suit_symbol = 'D'; break;
+            case 'C': suit_symbol = 'C'; break;
+            case 'S': suit_symbol = 'S'; break;
+            default:  suit_symbol = '?'; break;
         }
-        wprintf(L"│  %lc  │  ", suit_symbol);
+        printf("|  %c  |  ", suit_symbol);
     }
-    wprintf(L"\n");
-    
+    printf("\n");
+
     for (int i = 0; i < 2; i++) {
-        if (player->hand[i].rank == 'T') {
-            wprintf(L"│   10│  ");
-        } else {
-            wprintf(L"│    %c│  ", player->hand[i].rank);
-        }
+        if (player->hand[i].rank == 'T')
+            printf("|   10|  ");
+        else
+            printf("|%5c|  ", player->hand[i].rank);
     }
-    wprintf(L"\n");
-    for (int i = 0; i < 2; i++) {
-        wprintf(L"└─────┘  ");
-    }
-    wprintf(L"\n");
+    printf("\n");
+
+    for (int i = 0; i < 2; i++) printf("'-----'  ");
+    printf("\n");
 }
+
 
 void playerTurn(Player *player, int *pot, BettingState *state, int position) {
     
-    if(!player->is_active) {
-        return; //skip folded players
-    }
-
     displayPlayerHand(player);
     char input[50];
     int amount;
 
     while (1) {
-        printf("\nPot: %d | Current bet: %d | Your chips: %d\n", 
-              *pot, state->current_bet, player->chips);
-              
-        if (!state->bet_open) {
-            printf("(bet, fold, check) > ");
-        } 
-        else if (player->current_bet < state->current_bet) {
-            printf("(call %d, raise, fold) > ", state->current_bet - player->current_bet);
-        }
-        else {
-            printf("(check, bet, fold) > ");
-        }
-        
+        printf("\nPot: %d | Current bet: %d | Your chips: %d\n", *pot, state->current_bet, player->chips);
+        printf("Enter action (bet X/fold/check/call/raise X)> ");
+       
+        while ((getchar()) != '\n');  // clear buffer
+
         fgets(input, 50, stdin);
         input[strcspn(input, "\n")] = '\0';
         
-        // Process action
+        // process action:
         if (strcmp(input, "fold") == 0) {
             player->is_active = 0;
             break;
@@ -110,7 +92,7 @@ void playerTurn(Player *player, int *pot, BettingState *state, int position) {
             }
             amount = state->current_bet - player->current_bet;
             if (amount > player->chips) {
-                amount = player->chips; // Handle all-in
+                amount = player->chips; // handle allin
             }
             player->chips -= amount;
             player->current_bet += amount;
@@ -133,7 +115,7 @@ void playerTurn(Player *player, int *pot, BettingState *state, int position) {
             state->bet_open = 1;
             state->current_bet = player->current_bet;
             state->last_raiser = position;
-            state->min_raise = amount; // First bet sets minimum raise
+            state->min_raise = amount; // first bet sets min raise
             printf("%s bets %d\n", player->name, amount);
             break;
         }
@@ -149,14 +131,14 @@ void playerTurn(Player *player, int *pot, BettingState *state, int position) {
                 continue;
             }
             if (amount > player->chips) {
-                amount = player->chips; // Handle all-in
+                amount = player->chips; // HANDLE ALL_IN
             }
             player->chips -= amount;
             player->current_bet += amount;
             *pot += amount;
             state->current_bet = player->current_bet;
             state->last_raiser = position;
-            state->min_raise = amount; // Update for next raise
+            state->min_raise = amount; // update for next raise
             printf("%s raises to %d\n", player->name, player->current_bet);
             break;
         }
@@ -165,4 +147,4 @@ void playerTurn(Player *player, int *pot, BettingState *state, int position) {
             printf("check | call | fold | bet 50 | raise 100\n");
         }
     }
-}
+} 
