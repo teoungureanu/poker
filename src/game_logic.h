@@ -23,12 +23,20 @@ typedef struct {
 } Card;
 
 typedef struct {
-    char name[25];  
-    Card hand[2];   // player's cards
-    int chips;      // number of chips the player has
-    int is_active;  // 1 if the player is still in the round, 0 if folded
-    int current_bet; //value of the player's bet
+    char name[25];
+    Card hand[2];
+    int chips;
+    int is_active;
+    int current_bet;
 } Player;
+
+
+typedef struct {
+    int current_bet;       // highest bet this round
+    int bet_open;         // 1 if someone has bet this round , 0 otherwise
+    int min_raise;         // minimum raise amount
+    int last_raiser;     //round ends when turn returns to the last raiser
+} BettingState;
 
 void startMessage();
 
@@ -53,5 +61,9 @@ void dealRiver(Card *deck, Card community_cards[5], int number_of_players);
 void showCommunityCards(Card community_cards[5], int community_card_counter);
 
 int countActivePlayers(Player *players, int players_number);
+
+int forceShowdown(Player *players, int player_count);
+
+void handleBettingRound(Player *players, int players_number, BettingState *state, int *pot, int start_pos);
 
 #endif

@@ -8,50 +8,78 @@ void gameLoop(Player *players, int players_number, Card *deck, int *dealer_index
     int community_cards_count = 0;
     int pot = 0;
     BettingState state = {0};
+    int deck_index = players_number * 2;  // cards already dealt to players
 
     postBlinds(players, players_number, &pot, dealer_index);
-    resetBettingRound(&state, BIG_BLIND);
+    resetBettingRound(&state, BIG_BLIND, players_number, players);
 
-    int current_pos = (*dealer_index + 3) % players_number; // skip dealer, small blind, big blind
+    int first_to_act = (*dealer_index + 3) % players_number;
     printf("\n-- Preflop Betting Round --\n");
-    do {
-        Player *current = &players[current_pos];
-        int is_small_blind = (current_pos == (*dealer_index + 1) % players_number);
-        int is_big_blind = (current_pos == (*dealer_index + 2) % players_number);
-        if (current->is_active) {
-            if (current->current_bet == state.current_bet && is_small_blind && !is_big_blind) {
-                printf("%s checks.\n", current->name);
-            } else {
-                printf("%s's turn!\n", current->name);
-                playerTurn(current, &pot, &state, current_pos);
-            }
-        }
-        current_pos = (current_pos + 1) % players_number;
-    } while (!isBettingComplete(&state, players, players_number, current_pos));
+    handleBettingRound(players, players_number, &state, &pot, first_to_act);
 
+    if (forceShowdown(players, players_number)) {
+        printf("\nAll remaining players are all-in. Skipping to showdown...\n");
+        //all todo(for every all-in add this)
+        //revealRemainingCards(deck + deck_index, &community_cards[0], remaining);
+        //revealAllHands(players, players_number);
+        //determineWinner(players, players_number, community_cards);
+        return;
+    }
+
+    // FLOP
     if (countActivePlayers(players, players_number) >= 2) {
+        community_cards[0] = deck[deck_index++];
+        community_cards[1] = deck[deck_index++];
+        community_cards[2] = deck[deck_index++];
         community_cards_count = 3;
-        dealFlop(deck, community_cards, players_number);
+
         printf("\n-- Flop Dealt --\n");
         showCommunityCards(community_cards, community_cards_count);
 
-        resetBettingRound(&state, 0);
-        current_pos = (*dealer_index + 1) % players_number;
-        do {
-            Player *current = &players[current_pos];
-            if (current->is_active) {
-                printf("%s's turn!\n", current->name);
-                playerTurn(current, &pot, &state, current_pos);
-            }
-            current_pos = (current_pos + 1) % players_number;
-        } while (!isBettingComplete(&state, players, players_number, current_pos));
+        resetBettingRound(&state, 0, players_number, players);
+        handleBettingRound(players, players_number, &state, &pot, (*dealer_index + 1) % players_number);
 
-        printf("\nTurn and River here\n");
-        printf("Final community cards (Flop only):\n");
-        showCommunityCards(community_cards, community_cards_count);
-        printf("\n");
-
+        if (forceShowdown(players, players_number)) {
+            printf("\nAll remaining players are all-in. Skipping to showdown...\n");
+            return;
+        }
     }
+
+    // TURN
+    if (countActivePlayers(players, players_number) >= 2) {
+        community_cards[3] = deck[deck_index++];
+        community_cards_count = 4;
+
+        printf("\n-- Turn Dealt --\n");
+        showCommunityCards(community_cards, community_cards_count);
+
+        resetBettingRound(&state, 0, players_number, players);
+        handleBettingRound(players, players_number, &state, &pot, (*dealer_index + 1) % players_number);
+
+        if (forceShowdown(players, players_number)) {
+            printf("\nAll remaining players are all-in. Skipping to showdown...\n");
+            return;
+        }
+    }
+
+    // RIVER
+    if (countActivePlayers(players, players_number) >= 2) {
+        community_cards[4] = deck[deck_index++];
+        community_cards_count = 5;
+
+        printf("\n-- River Dealt --\n");
+        showCommunityCards(community_cards, community_cards_count);
+
+        resetBettingRound(&state, 0, players_number, players);
+        handleBettingRound(players, players_number, &state, &pot, (*dealer_index + 1) % players_number);
+    }
+
+    // compare hands, final
+    printf("\n-- Showdown --\n");
+    // TODO: revealAllHands(players, players_number);
+    // TODO: determineWinner(players, players_number, community_cards);
+
+    *dealer_index = (*dealer_index + 1) % players_number;
 }
 
 
@@ -61,8 +89,10 @@ int main(void){
     Player players[number_of_players];
     getPlayerNames(players, number_of_players);
     Card deck[52];
+    // loop this until game over:
     initDeck(deck);
     shuffleDeck(deck);
+    srand(time(NULL)); // set seed again for other shuffles
     int dealer_index = 0; // initialize dealer index to be passed to game loop func
     gameLoop(players, number_of_players, deck, &dealer_index);
     return 0;

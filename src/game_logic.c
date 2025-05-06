@@ -1,5 +1,4 @@
 #include "game_logic.h"
-
 const char SUITS[] = {'H', 'D', 'C', 'S'}; 
 const char RANKS[] = {'2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'};
 
@@ -102,8 +101,6 @@ void postBlinds(Player *players, int number_of_players, int *pot, int *dealer_in
     *pot += big_blind;
     printf("%s posts the big blind (%d chips).\n\n", players[big_blind_index].name, big_blind);
 
-    *dealer_index = (*dealer_index + 1) % number_of_players;
-    //  dealer index changes to the next player
     
 }
 
@@ -180,4 +177,28 @@ int countActivePlayers(Player *players, int players_number) {
         }
     }
     return active_count;
+}
+
+int forceShowdown(Player *players, int player_count) {
+    int active_with_chips = 0;
+
+    for (int i = 0; i < player_count; i++) {
+        if (players[i].is_active && players[i].chips > 0) {
+            active_with_chips++;
+        }
+    }
+
+    return (active_with_chips <= 1);
+}
+
+void handleBettingRound(Player *players, int players_number, BettingState *state, int *pot, int start_pos) {
+    int current_pos = start_pos;
+    do {
+        Player *current = &players[current_pos];
+        if (current->is_active) {
+            printf("%s's turn!\n", current->name);
+            playerTurn(current, pot, state, current_pos);
+        }
+        current_pos = (current_pos + 1) % players_number;
+    } while (!isBettingComplete(state, players, players_number, current_pos));
 }

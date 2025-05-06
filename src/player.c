@@ -1,12 +1,17 @@
+#include "game_logic.h"
 #include "player.h"
 #include <stdio.h>
 #include <string.h>
 
-void resetBettingRound(BettingState *state, int big_blind) {
+void resetBettingRound(BettingState *state, int big_blind, int players_number, Player * players) {
     state->current_bet = big_blind;
     state->bet_open = (big_blind > 0);
     state->min_raise = big_blind;
     state->last_raiser = -1;
+
+    for (int i = 0; i < players_number; i++) {
+        players[i].current_bet = 0;
+    }
 }
 
 int isBettingComplete(BettingState *state, Player *players, int player_count, int current_pos) {
@@ -15,7 +20,9 @@ int isBettingComplete(BettingState *state, Player *players, int player_count, in
             return 0;
         }
     }
-    return 1;
+
+    return current_pos == state->last_raiser;  // betting is complete when action returns to 
+    // last raiser, so every player has a chance to re-raise
 }
 
 void displayPlayerHand(Player *player) {
@@ -65,6 +72,11 @@ void playerTurn(Player *player, int *pot, BettingState *state, int position) {
     int amount;
 
     while (1) {
+        if (player->chips == 0) {
+            printf("%s is all-in and cannot act.\n", player->name);
+            return;
+        }
+
         printf("\nPot: %d | Current bet: %d | Your chips: %d\n", *pot, state->current_bet, player->chips);
         printf("Enter action (bet X/fold/check/call/raise X)> ");
        
@@ -74,23 +86,33 @@ void playerTurn(Player *player, int *pot, BettingState *state, int position) {
         input[strcspn(input, "\n")] = '\0';
         
         // process action:
+
         if (strcmp(input, "fold") == 0) {
             player->is_active = 0;
+            printf("%s folds\n", player->name);
             break;
-        }
+        }        
+        
         else if (strcmp(input, "check") == 0) {
             if (state->bet_open && player->current_bet < state->current_bet) {
                 printf("Cannot check when there's a bet!\n");
                 continue;
             }
+            printf("%s checks\n", player->name);
             break;
         }
         else if (strcmp(input, "call") == 0) {
             if (!state->bet_open) {
-                printf("No bet to call!\n");
+                printf("No bet to call! You can check or bet instead.\n");
                 continue;
             }
             amount = state->current_bet - player->current_bet;
+
+            if (amount == 0) {
+                printf("You have already matched the current bet. You can check or raise instead.\n");
+                continue;
+            }
+
             if (amount > player->chips) {
                 amount = player->chips; // handle allin
             }
@@ -142,9 +164,35 @@ void playerTurn(Player *player, int *pot, BettingState *state, int position) {
             printf("%s raises to %d\n", player->name, player->current_bet);
             break;
         }
+        else if (strcmp(input, "all-in") == 0) {
+            if (player->chips == 0) {
+                printf("You have no chips left.\n");
+                continue;
+            }
+        
+            int amount = player->chips;
+            player->chips = 0;
+            player->current_bet += amount;
+            *pot += amount;
+        
+            if (!state->bet_open) {
+                state->bet_open = 1;
+                state->current_bet = player->current_bet;
+                state->min_raise = amount;
+            } else {
+                if (player->current_bet > state->current_bet) {
+                    state->min_raise = player->current_bet - state->current_bet;
+                    state->current_bet = player->current_bet;
+                    state->last_raiser = position;
+                }
+            }
+        
+            printf("%s goes all-in with %d\n", player->name, amount);
+            break;
+        }
         else {
             printf("Invalid command! Valid examples:\n");
             printf("check | call | fold | bet 50 | raise 100\n");
         }
-    }
+    }   
 } 
