@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <errno.h>
+#include <string.h>
 #include <unistd.h> // for sleep()
 #define DECK_SIZE 52
 #define DEFAULT_CHIPS 1000
@@ -22,12 +23,28 @@ typedef struct {
     char rank;  
 } Card;
 
+
+typedef enum {
+    HIGH_CARD = 1,
+    ONE_PAIR,
+    TWO_PAIR,
+    THREE_OF_A_KIND,
+    STRAIGHT,
+    FLUSH,
+    FULL_HOUSE,
+    FOUR_OF_A_KIND,
+    STRAIGHT_FLUSH,
+    ROYAL_FLUSH
+} HandRank;
+
+
 typedef struct {
     char name[25];
     Card hand[2];
     int chips;
     int is_active;
     int current_bet;
+    HandRank hand_rank;
 } Player;
 
 
@@ -37,6 +54,7 @@ typedef struct {
     int min_raise;         // minimum raise amount
     int last_raiser;     //round ends when turn returns to the last raiser
 } BettingState;
+
 
 void startMessage();
 
@@ -64,6 +82,15 @@ int countActivePlayers(Player *players, int players_number);
 
 int forceShowdown(Player *players, int player_count);
 
-void handleBettingRound(Player *players, int players_number, BettingState *state, int *pot, int start_pos);
+HandRank evaluateHand(Card hand[2], Card community[5]);
+
+int rankValue(char rank);
+
+int compareCards(const void *a, const void *b);
+
+void sortCards(Card *cards, int n);
+
+int isRoyalFlush(Card cards[]);
+
 
 #endif

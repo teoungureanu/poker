@@ -48,7 +48,11 @@ void getPlayerNames(Player *players, int players_number) {
     for (int i = 0; i < players_number; i++) {
         printf("Enter name for Player %d: ", i + 1);
         scanf("%25s", players[i].name);
+        while (getchar() != '\n');
         players[i].chips = DEFAULT_CHIPS; //sets players' chips to default macro
+        players[i].is_active = 1;
+        players[i].current_bet = 0;
+        players[i].hand_rank = HIGH_CARD;
     }
     printf("\n");
 }
@@ -61,13 +65,13 @@ int getPlayerNumber(){
         exit(-1);
     }
     while(players < 2 || players > 4) {
-        printf("Invalid number of players. Please choose a number between 2 and 4.");
+        printf("Invalid number of players. Please choose a number between 2 and 4: ");
         if((scanf("%d", &players)) != 1){
             perror("Error, you didn't enter the number of players correctly!");
             exit(-1);
         }
     }
-
+    while (getchar() != '\n');
     return players;
 }
 
@@ -191,14 +195,69 @@ int forceShowdown(Player *players, int player_count) {
     return (active_with_chips <= 1);
 }
 
-void handleBettingRound(Player *players, int players_number, BettingState *state, int *pot, int start_pos) {
-    int current_pos = start_pos;
-    do {
-        Player *current = &players[current_pos];
-        if (current->is_active) {
-            printf("%s's turn!\n", current->name);
-            playerTurn(current, pot, state, current_pos);
+HandRank evaluateHand(Card hand[2], Card community[5]) {
+    Card combined[7];
+    memcpy(combined, hand, 2 * sizeof(Card));
+    memcpy(combined + 2, community, 5 * sizeof(Card));
+
+    // sort combined cards for easier checks
+    sortCards(combined, 7);
+
+    if (isRoyalFlush(combined)) return ROYAL_FLUSH;
+    if (isStraightFlush(combined)) return STRAIGHT_FLUSH;
+    if (isFourOfAKind(combined)) return FOUR_OF_A_KIND;
+    if (isFullHouse(combined)) return FULL_HOUSE;
+    if (isFlush(combined)) return FLUSH;
+    if (isStraight(combined)) return STRAIGHT;
+    if (isThreeOfAKind(combined)) return THREE_OF_A_KIND;
+    if (isTwoPair(combined)) return TWO_PAIR;
+    if (isOnePair(combined)) return ONE_PAIR;
+    return HIGH_CARD;
+}
+
+int rankValue(char rank) {
+    for (int i = 0; i < 13; i++) {
+        if (RANKS[i] == rank) return i;
+    }
+    return -1; // error
+}
+
+int compareCards(const void *a, const void *b) {
+    Card *cardA = (Card *)a;
+    Card *cardB = (Card *)b;
+    return rankValue(cardB->rank) - rankValue(cardA->rank); //descending, for sort
+}
+
+void sortCards(Card *cards, int n) { // sort player cards, for easier hand evaluation
+    qsort(cards, n, sizeof(Card), compareCards);
+}
+
+int isRoyalFlush(Card cards[]) {
+    const char needed[] = {'T', 'J', 'Q', 'K', 'A'};
+
+    for (int s = 0; s < 4; s++) {
+        char suit = SUITS[s];
+        int found[5] = {0};
+
+        for (int i = 0; i < 7; i++) {
+            if (cards[i].suit == suit) {
+                for (int j = 0; j < 5; j++) {
+                    if (cards[i].rank == needed[j]) {
+                        found[j] = 1;
+                    }
+                }
+            }
         }
-        current_pos = (current_pos + 1) % players_number;
-    } while (!isBettingComplete(state, players, players_number, current_pos));
+
+        int all_found = 1;
+        for (int j = 0; j < 5; j++) {
+            if (!found[j]) {
+                all_found = 0;
+                break;
+            }
+        }
+
+        if (all_found) return 1;
+    }
+    return 0;
 }

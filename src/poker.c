@@ -11,18 +11,24 @@ void gameLoop(Player *players, int players_number, Card *deck, int *dealer_index
     int deck_index = players_number * 2;  // cards already dealt to players
 
     postBlinds(players, players_number, &pot, dealer_index);
-    resetBettingRound(&state, BIG_BLIND, players_number, players);
+    int big_blind_pos   = (*dealer_index + 2) % players_number;
+    int first_to_act    = (*dealer_index + 1 + (players_number != 2) * 2) % players_number;
 
-    int first_to_act = (*dealer_index + 3) % players_number;
+    state.current_bet = BIG_BLIND;
+    state.bet_open = 1;
+    state.min_raise = BIG_BLIND;
+    state.last_raiser = big_blind_pos;
+
     printf("\n-- Preflop Betting Round --\n");
-    handleBettingRound(players, players_number, &state, &pot, first_to_act);
+    handleBettingRound(players, players_number, &state, &pot, first_to_act, community_cards);
 
     if (forceShowdown(players, players_number)) {
         printf("\nAll remaining players are all-in. Skipping to showdown...\n");
-        //all todo(for every all-in add this)
-        //revealRemainingCards(deck + deck_index, &community_cards[0], remaining);
-        //revealAllHands(players, players_number);
-        //determineWinner(players, players_number, community_cards);
+        for (int i = 0; i < players_number; i++) {
+            if (players[i].is_active) {
+                players[i].hand_rank = evaluateHand(players[i].hand, community_cards);
+            }
+        }
         return;
     }
 
@@ -37,7 +43,7 @@ void gameLoop(Player *players, int players_number, Card *deck, int *dealer_index
         showCommunityCards(community_cards, community_cards_count);
 
         resetBettingRound(&state, 0, players_number, players);
-        handleBettingRound(players, players_number, &state, &pot, (*dealer_index + 1) % players_number);
+        handleBettingRound(players, players_number, &state, &pot, (*dealer_index + 1) % players_number, community_cards);
 
         if (forceShowdown(players, players_number)) {
             printf("\nAll remaining players are all-in. Skipping to showdown...\n");
@@ -54,7 +60,7 @@ void gameLoop(Player *players, int players_number, Card *deck, int *dealer_index
         showCommunityCards(community_cards, community_cards_count);
 
         resetBettingRound(&state, 0, players_number, players);
-        handleBettingRound(players, players_number, &state, &pot, (*dealer_index + 1) % players_number);
+        handleBettingRound(players, players_number, &state, &pot, (*dealer_index + 1) % players_number, community_cards);
 
         if (forceShowdown(players, players_number)) {
             printf("\nAll remaining players are all-in. Skipping to showdown...\n");
@@ -71,7 +77,7 @@ void gameLoop(Player *players, int players_number, Card *deck, int *dealer_index
         showCommunityCards(community_cards, community_cards_count);
 
         resetBettingRound(&state, 0, players_number, players);
-        handleBettingRound(players, players_number, &state, &pot, (*dealer_index + 1) % players_number);
+        handleBettingRound(players, players_number, &state, &pot, (*dealer_index + 1) % players_number, community_cards);
     }
 
     // compare hands, final

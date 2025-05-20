@@ -2,11 +2,13 @@
 #include "player.h"
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
-void resetBettingRound(BettingState *state, int big_blind, int players_number, Player * players) {
-    state->current_bet = big_blind;
-    state->bet_open = (big_blind > 0);
-    state->min_raise = big_blind;
+
+void resetBettingRound(BettingState *state, int big_blind, int players_number, Player *players) {
+    state->current_bet = 0;
+    state->bet_open = 0;
+    state->min_raise = big_blind;  
     state->last_raiser = -1;
 
     for (int i = 0; i < players_number; i++) {
@@ -15,15 +17,28 @@ void resetBettingRound(BettingState *state, int big_blind, int players_number, P
 }
 
 int isBettingComplete(BettingState *state, Player *players, int player_count, int current_pos) {
+    int active_count = 0;
+
     for (int i = 0; i < player_count; i++) {
-        if (players[i].is_active && players[i].current_bet < state->current_bet) {
-            return 0;
+        if (players[i].is_active) {
+            active_count++;
+            if (players[i].current_bet < state->current_bet) {
+                return 0;  // still someone who hasn't matched the bet
+            }
         }
     }
 
-    return current_pos == state->last_raiser;  // betting is complete when action returns to 
-    // last raiser, so every player has a chance to re-raise
+    if (active_count <= 1) {
+        return 1;  // only one player remaining
+    }
+
+    if (state->last_raiser == -1) {
+        return 1;  // no one raised (all called or checked)
+    }
+
+    return current_pos == state->last_raiser;
 }
+
 
 void displayPlayerHand(Player *player) {
     printf("\n%s's hand:\n", player->name);
@@ -79,10 +94,13 @@ void playerTurn(Player *player, int *pot, BettingState *state, int position) {
 
         printf("\nPot: %d | Current bet: %d | Your chips: %d\n", *pot, state->current_bet, player->chips);
         printf("Enter action (bet X/fold/check/call/raise X)> ");
-       
-        while ((getchar()) != '\n');  // clear buffer
-
-        fgets(input, 50, stdin);
+        
+        if (!fgets(input, sizeof(input), stdin)) {
+            printf("Error reading input. Try again.\n");
+            continue;
+        }
+    
+        // remove trailing newline if present
         input[strcspn(input, "\n")] = '\0';
         
         // process action:
@@ -146,24 +164,32 @@ void playerTurn(Player *player, int *pot, BettingState *state, int position) {
                 printf("Use 'bet' when no one has bet yet!\n");
                 continue;
             }
-            int total_bet = player->current_bet + amount;
-            int min_raise = state->current_bet + state->min_raise;
-            if (total_bet < min_raise) {
-                printf("Minimum raise is %d!\n", state->min_raise);
+        
+            int raise_amount = amount;
+            int total_bet = player->current_bet + raise_amount;
+            int required_total = state->current_bet + state->min_raise;
+        
+            if (total_bet < required_total) {
+                printf("Minimum raise must bring your total bet to at least %d!\n", required_total);
                 continue;
             }
-            if (amount > player->chips) {
-                amount = player->chips; // HANDLE ALL_IN
+        
+            if (raise_amount > player->chips) {
+                raise_amount = player->chips; // HANDLE ALL-IN
             }
-            player->chips -= amount;
-            player->current_bet += amount;
-            *pot += amount;
+        
+            player->chips -= raise_amount;
+            player->current_bet += raise_amount;
+            *pot += raise_amount;
+        
+            state->min_raise = player->current_bet - state->current_bet;
             state->current_bet = player->current_bet;
             state->last_raiser = position;
-            state->min_raise = amount; // update for next raise
+        
             printf("%s raises to %d\n", player->name, player->current_bet);
             break;
         }
+        
         else if (strcmp(input, "all-in") == 0) {
             if (player->chips == 0) {
                 printf("You have no chips left.\n");
@@ -179,11 +205,17 @@ void playerTurn(Player *player, int *pot, BettingState *state, int position) {
                 state->bet_open = 1;
                 state->current_bet = player->current_bet;
                 state->min_raise = amount;
+                state->last_raiser = position;
             } else {
                 if (player->current_bet > state->current_bet) {
-                    state->min_raise = player->current_bet - state->current_bet;
+                    int raise_amount = player->current_bet - state->current_bet;
+        
+                    if (raise_amount >= state->min_raise) {
+                        state->min_raise = raise_amount;
+                        state->last_raiser = position;
+                    }
+        
                     state->current_bet = player->current_bet;
-                    state->last_raiser = position;
                 }
             }
         
@@ -196,3 +228,24 @@ void playerTurn(Player *player, int *pot, BettingState *state, int position) {
         }
     }   
 } 
+
+void handleBettingRound(Player *players, int players_number, BettingState *state, int *pot, int start_pos, Card community_cards[5]) {
+    int current_pos = start_pos;
+    do {
+        Player *current = &players[current_pos];
+        if (current->is_active) {
+            printf("%s's turn!\n", current->name);
+            playerTurn(current, pot, state, current_pos);
+            if (forceShowdown(players, players_number)) {
+                printf("\nAll remaining players are all-in. Skipping to showdown...\n");
+                for (int i = 0; i < players_number; i++) {
+                    if (players[i].is_active) {
+                        players[i].hand_rank = evaluateHand(players[i].hand, community_cards);
+                    }
+                }
+                return;  
+            }
+        }
+        current_pos = (current_pos + 1) % players_number;
+    } while (!isBettingComplete(state, players, players_number, current_pos));
+}
