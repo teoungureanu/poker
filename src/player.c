@@ -16,28 +16,29 @@ void resetBettingRound(BettingState *state, int big_blind, int players_number, P
     }
 }
 
-int isBettingComplete(BettingState *state, Player *players, int player_count, int current_pos) {
+int isBettingComplete(BettingState *state, Player *players, int player_count, int current_pos, int start_pos) {
     int active_count = 0;
 
     for (int i = 0; i < player_count; i++) {
         if (players[i].is_active) {
             active_count++;
             if (players[i].current_bet < state->current_bet) {
-                return 0;  // still someone who hasn't matched the bet
+                return 0; 
             }
         }
     }
 
-    if (active_count <= 1) {
-        return 1;  // only one player remaining
+    if (active_count <= 1) return 1;
+
+    if (state->bet_open && state->last_raiser != -1) {
+        return current_pos == state->last_raiser;
     }
 
-    if (state->last_raiser == -1) {
-        return 1;  // no one raised (all called or checked)
-    }
-
-    return current_pos == state->last_raiser;
+    
+    return current_pos == start_pos;
 }
+
+
 
 
 void displayPlayerHand(Player *player) {
@@ -92,17 +93,21 @@ void playerTurn(Player *player, int *pot, BettingState *state, int position) {
             return;
         }
 
-        printf("\nPot: %d | Current bet: %d | Your chips: %d\n", *pot, state->current_bet, player->chips);
+        printf("\nPot: %d | Current bet: %d | Your chips: %d | Your last bet: %d\n", *pot, state->current_bet, player->chips, player->current_bet);
         printf("Enter action (bet X/fold/check/call/raise X)> ");
         
-        if (!fgets(input, sizeof(input), stdin)) {
-            printf("Error reading input. Try again.\n");
-            continue;
+        if (fgets(input, sizeof(input), stdin) == NULL) {
+            printf("\nEnd of input (EOF received). Ending game.\n");
+            exit(0);
         }
     
-        // remove trailing newline if present
+        // Remove trailing newline if present
         input[strcspn(input, "\n")] = '\0';
-        
+    
+        if (strlen(input) == 0) {
+            printf("Empty input, please enter a command.\n");
+            continue;
+        }
         // process action:
 
         if (strcmp(input, "fold") == 0) {
@@ -231,21 +236,29 @@ void playerTurn(Player *player, int *pot, BettingState *state, int position) {
 
 void handleBettingRound(Player *players, int players_number, BettingState *state, int *pot, int start_pos, Card community_cards[5]) {
     int current_pos = start_pos;
+
     do {
         Player *current = &players[current_pos];
+
         if (current->is_active) {
             printf("%s's turn!\n", current->name);
             playerTurn(current, pot, state, current_pos);
+
             if (forceShowdown(players, players_number)) {
-                printf("\nAll remaining players are all-in. Skipping to showdown...\n");
+                printf("\nall remaining players are all-in. skipping to showdown...\n");
+
                 for (int i = 0; i < players_number; i++) {
                     if (players[i].is_active) {
-                        players[i].hand_rank = evaluateHand(players[i].hand, community_cards);
+                        players[i].player_value = evaluateHand(players[i].hand, community_cards);
                     }
                 }
-                return;  
+
+                return; 
             }
         }
+        
         current_pos = (current_pos + 1) % players_number;
-    } while (!isBettingComplete(state, players, players_number, current_pos));
+
+    } while (!isBettingComplete(state, players, players_number, current_pos, start_pos));
 }
+
